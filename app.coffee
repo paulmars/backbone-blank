@@ -1,63 +1,41 @@
 logDebug = false
 
+$container = $(".container")
+
+Page = Backbone.Model.extend
+  defaults:
+    copy: ''
+
+PagesCollection = Backbone.Collection.extend
+  model: Page
+  url: '/api/pages.json'
+  # localStorage: new Store('pages')
+
+pages = new PagesCollection()
+thePage = null
+
+createDefaultPage = ->
+  console.log "len", pages.length if logDebug
+  if pages.length > 0
+    console.log "found page" if logDebug
+    thePage = pages.at(0)
+    $container.html(thePage.get("copy"))
+  else
+    console.log "create page" if logDebug
+    thePage = pages.create({
+      copy: $container.html()
+    })
+
+postFetch = ->
+  createDefaultPage()
+
 saveText = ->
-	console.log "save text"
+  console.log "save text", thePage
+  thePage.set("copy", $container.html())
+  thePage.save()
 
-debouncedSave = _.debounce(saveText, 500)
+debouncedSave = _.debounce(saveText, 100)
+$container.keyup debouncedSave
 
-$(".container").keyup debouncedSave
-
-
-# Message = Backbone.Model.extend
-#   defaults:
-#     message: ''
-
-# MessagesCollection = Backbone.Collection.extend
-#   model: Message
-#   url: '/api/messages.json'
-#   # localStorage: new Store('messages')
-
-# Messages = new MessagesCollection([])
-# Messages.fetch()
-
-# HistoryView = Backbone.View.extend
-#   el: '#history'
-#   template: _.template( $('#messages-template').html() )
-#   render: ->
-#     @$el.html( @template( {messages: Messages.toJSON()} ) )
-#     this
-#   initialize: ->
-#     @listenTo(Messages, 'reset', @redo)
-#     @listenTo(Messages, 'add', @redo)
-#     @listenTo(Messages, 'remove', @redo)
-#     @listenTo(Messages, 'create', @redo)
-#   redo: ->
-#     @$el.html("")
-#     @render()
-
-# InputView = Backbone.View.extend
-#   el: '#message'
-#   template: _.template( $('#message-template').html() )
-#   events: ->
-#     'keypress #message-input': 'keypress'
-#   render: ->
-#     @$el.html( @template() )
-#     @$messageInput = $("#message-input")
-#     this
-#   initialize: ->
-#   createMessage: ->
-#     console.log "input", @$messageInput.val() if logDebug
-#     Messages.create({
-#       message: @$messageInput.val()
-#       createdAt: new Date()
-#     })
-#     @$messageInput.val("").focus()
-#   keypress: (e) ->
-#     return if e.which isnt ENTER_KEY
-#     @createMessage()
-
-# historyView = new HistoryView()
-# historyView.render()
-
-# inputView = new InputView()
-# inputView.render()
+pageFetch = pages.fetch()
+pageFetch.done postFetch
